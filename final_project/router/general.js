@@ -40,13 +40,16 @@ public_users.get("/isbn/:isbn", function (req, res) {
 // Get book details based on author
 public_users.get("/author/:author", async function (req, res) {
   const author = req.params.author.toLowerCase();
-  if (!author) return res.status(400).json({ message: "Author is required" });
+
   const booksByAuthor = Object.keys(books)
     .filter((key) => books[key].author.toLowerCase() === author)
-    .map((key) => books[key]);
+    .map((key) => {
+      const { author, ...bookswithoutAuthor } = books[key];
+      return bookswithoutAuthor;
+    });
   if (booksByAuthor.length > 0) {
-    return res.status(300).json({
-      [Object.keys(booksByAuthor)]: booksByAuthor,
+    return res.status(200).json({
+      booksByAuthor,
     });
   } else {
     return res.status(404).json({ message: "No books found for this author" });
@@ -59,10 +62,13 @@ public_users.get("/title/:title", function (req, res) {
   if (!title) return res.status(400).json({ message: "Title is required" });
   const booksByTitle = Object.keys(books)
     .filter((key) => books[key].title.toLowerCase() === title)
-    .map((key) => books[key]);
+    .map((key) => {
+      const { title, ...bookwithoutTitle } = books[key];
+      return bookwithoutTitle;
+    });
   if (booksByTitle.length > 0) {
     return res.status(200).json({
-      [Object.keys(booksByTitle)]: booksByTitle,
+      booksByTitle,
     });
   } else {
     return res.status(404).json({ message: "No books found for this title" });
@@ -75,10 +81,9 @@ public_users.get("/review/:isbn", function (req, res) {
   const book = books[isbn];
   if (book) {
     const reviews = book.reviews;
-    if (Object.keys(reviews).length > 0) {
+    if (reviews) {
       return res.status(200).json(reviews);
     }
-    return res.status(404).json({ message: "No reviews found for this book" });
   }
   return res.status(400).json({ message: "book not found with this isbn" });
 });
