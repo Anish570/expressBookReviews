@@ -28,13 +28,11 @@ regd_users.post("/login", (req, res) => {
   if (isValid(username)) {
     if (authenticatedUser(username, password)) {
       const token = jwt.sign({ password }, "secret", { expiresIn: "1h" });
-      req.session.authorization = { accessToken: token };
-      return res
-        .status(200)
-        .json({
-          message: "Customer Logged in successfully",
-          accessToken: token,
-        });
+      req.session.authorization = { user: username, accessToken: token };
+      return res.status(200).json({
+        message: "Customer Logged in successfully",
+        accessToken: token,
+      });
     } else {
       return res.status(300).json({ message: "Invalid credentials" });
     }
@@ -45,8 +43,32 @@ regd_users.post("/login", (req, res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({ message: "Yet to be implemented" });
+  const isbn = req.params.isbn;
+  const review = req.body;
+
+  const user = req.session.authorization["user"];
+
+  if (books[isbn]) {
+    const book = books[isbn];
+    book.reviews[user] = review;
+    return res.status(201).json({ message: "Review added successfully" });
+  }
+  return res.status(400).json({ message: "book not found" });
+});
+
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+  const isbn = req.params.isbn;
+  const user = req.session.authorization["user"];
+  if (books[isbn]) {
+    const book = books[isbn];
+    if (book.reviews[user]) {
+      delete book.reviews[user];
+      return res.status(200).json({ message: "Review deleted successfully" });
+    } else {
+      return res.status(400).json({ message: "Review not found" });
+    }
+  }
+  return res.status(400).json({ message: "book not found" });
 });
 
 module.exports.authenticated = regd_users;
